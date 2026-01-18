@@ -1,0 +1,63 @@
+{
+  "name": "manus-toolkit",
+  "version": "1.0.0",
+  "description": "Manus DNS Automation Toolkit for Claude Code",
+  "author": "Philip S. Wright (pdubbbbbs)",
+  "workflows": {
+    "deploy": {
+      "description": "Deploy a Manus project with custom domain",
+      "command": "scripts/manus-deploy-auto.py deploy",
+      "args": ["project_name", "custom_domain", "manus_url"],
+      "example": "deploy my-app app.example.com abc123.manus.space"
+    },
+    "status": {
+      "description": "Check deployment status",
+      "command": "scripts/manus-deploy-auto.py status",
+      "args": ["project_name"],
+      "example": "status my-app"
+    },
+    "list-projects": {
+      "description": "List all tracked projects",
+      "command": "scripts/manus-deploy-auto.py list",
+      "args": [],
+      "example": "list"
+    },
+    "dns-list": {
+      "description": "List DNS records",
+      "command": "scripts/manus-dns-manager.py list",
+      "args": ["--domain"],
+      "example": "dns list --domain example.com"
+    },
+    "dns-create": {
+      "description": "Create a DNS record",
+      "command": "scripts/manus-dns-manager.py create",
+      "args": ["--domain", "--type", "--name", "--content"],
+      "example": "dns create -d example.com -t CNAME -n app -c target.manus.space"
+    },
+    "zones": {
+      "description": "List all Cloudflare domains",
+      "command": "scripts/manus-dns-manager.py zones",
+      "args": [],
+      "example": "zones"
+    }
+  },
+  "natural_language_triggers": {
+    "deploy": ["deploy", "create project", "new project", "set up"],
+    "status": ["status", "check", "how is"],
+    "list-projects": ["list projects", "show projects", "my projects"],
+    "dns-list": ["list dns", "show records", "dns records"],
+    "dns-create": ["create record", "add record", "new record"],
+    "zones": ["list domains", "my domains", "zones"]
+  },
+  "defaults": {
+    "record_type": "CNAME",
+    "proxied": true,
+    "ttl": "auto"
+  },
+  "paths": {
+    "scripts": "scripts/",
+    "config": "config/",
+    "database": "db/",
+    "docs": "docs/"
+  }
+}

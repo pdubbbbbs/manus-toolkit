@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# Manus DNS - macOS Application Launcher
+# Opens the interactive Manus DNS manager in Terminal
+#
+
+SCRIPT_DIR="$(dirname "$(dirname "$(dirname "$0")")")"
+TOOLKIT_DIR="$SCRIPT_DIR"
+
+# Find the toolkit directory - check multiple locations
+if [[ -d "$HOME/CLAUDE/manus-toolkit" ]]; then
+  TOOLKIT_DIR="$HOME/CLAUDE/manus-toolkit"
+elif [[ -d "/Applications/Manus DNS.app/Contents/Resources/toolkit" ]]; then
+  TOOLKIT_DIR="/Applications/Manus DNS.app/Contents/Resources/toolkit"
+fi
+
+# Check for venv
+if [[ -f "$TOOLKIT_DIR/venv/bin/python" ]]; then
+  PYTHON="$TOOLKIT_DIR/venv/bin/python"
+else
+  PYTHON="python3"
+fi
+
+# Launch Terminal with the interactive helper
+osascript << EOF
+tell application "Terminal"
+  activate
+  set newTab to do script "cd '$TOOLKIT_DIR' && clear && echo ''; echo '  Manus DNS Manager'; echo '  ═══════════════════════════════════════'; echo ''; if [ -f venv/bin/activate ]; then source venv/bin/activate; fi; ./scripts/claude-manus-helper.sh"
+  set current settings of newTab to settings set "Basic"
+end tell
+EOF

@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+#
+# manus-dns - Bash wrapper for Manus DNS Manager
+#
+# Easy CLI usage for common DNS operations.
+#
+# Usage:
+#   manus-dns zones              # List all domains
+#   manus-dns list [domain]      # List DNS records
+#   manus-dns add <args>         # Create record (interactive)
+#   manus-dns update <args>      # Update record
+#   manus-dns delete <args>      # Delete record
+#   manus-dns deploy <args>      # Full deployment with monitoring
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANAGER="$SCRIPT_DIR/manus-dns-manager.py"
+DEPLOYER="$SCRIPT_DIR/manus-deploy-auto.py"
+
+# Colors
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+DIM='\033[2m'
+
+show_banner() {
+  echo -e "${CYAN}"
+  echo "╔══════════════════════════════════════════╗"
+  echo "║           Manus DNS Manager              ║"
+  echo "║     Cloudflare DNS Automation Tool       ║"
+  echo "╚══════════════════════════════════════════╝"
+  echo -e "${NC}"
+}
+
+show_help() {
+  show_banner
+  echo -e "${YELLOW}Usage:${NC}"
+  echo "  manus-dns <command> [options]"
+  echo ""
+  echo -e "${YELLOW}Commands:${NC}"
+  echo -e "  ${GREEN}zones${NC}                   List all domains in your Cloudflare account"
+  echo -e "  ${GREEN}list${NC} [domain]           List DNS records (optionally for specific domain)"
+  echo -e "  ${GREEN}add${NC}                     Interactive record creation"
+  echo -e "  ${GREEN}create${NC} <options>        Create DNS record with options"
+  echo -e "  ${GREEN}update${NC} <options>        Update existing DNS record"
+  echo -e "  ${GREEN}delete${NC} <options>        Delete DNS record"
+  echo ""
+  echo -e "${YELLOW}Deployment:${NC}"
+  echo -e "  ${GREEN}deploy${NC} <name> <domain> <manus_url>   Full deployment with monitoring"
+  echo -e "  ${GREEN}status${NC} <name>                        Check deployment status"
+  echo -e "  ${GREEN}projects${NC}                             List all tracked projects"
+  echo -e "  ${GREEN}remove${NC} <name>                        Remove a project"
+  echo -e "  ${GREEN}monitor${NC} <domain>                     Monitor DNS/availability"
+  echo ""
+  echo -e "${YELLOW}Examples:${NC}"
+  echo "  manus-dns zones"
+  echo "  manus-dns list philipwright.me"
+  echo "  manus-dns create -d philipwright.me -t CNAME -n app -c target.manus.space"
+  echo "  manus-dns deploy myapp app.philipwright.me abc123.manus.space"
+  echo ""
+  echo -e "${DIM}Config: Set CLOUDFLARE_API_TOKEN in environment or config/.env${NC}"
+}
+
+interactive_add() {
+  show_banner
+  echo -e "${YELLOW}Interactive DNS Record Creation${NC}"
+  echo ""
+
+  # Get domain
+  read -rp "Domain (e.g., example.com): " domain
+  if [[ -z "$domain" ]]; then
+    echo -e "${RED}Error: Domain is required${NC}"
+    exit 1
+  fi
+
+  # Get record type
+  echo ""
+  echo "Record types: A, AAAA, CNAME, TXT, MX, NS"
+  read -rp "Record type [CNAME]: " record_type
+  record_type=${record_type:-CNAME}
+
+  # Get name
+  read -rp "Record name (@ for root, or subdomain): " name
+  if [[ -z "$name" ]]; then
+    echo -e "${RED}Error: Name is required${NC}"
+    exit 1
+  fi
+
+  # Get content
+  read -rp "Content/Value (e.g., target.manus.space): " content
+  if [[ -z "$content" ]]; then
+    echo -e "${RED}Error: Content is required${NC}"
+    exit 1
+  fi
+
+  # Proxied?
+  read -rp "Enable Cloudflare proxy? [y/N]: " proxied
+  proxied_flag=""
+  if [[ "$proxied" =~ ^[Yy]$ ]]; then
+    proxied_flag="--proxied"
+  fi
+
+  echo ""
+  echo -e "${YELLOW}Creating record...${NC}"
+  python3 "$MANAGER" create --domain "$domain" --type "$record_type" --name "$name" --content "$content" $proxied_flag
+}
+
+# Check dependencies
+check_deps() {
+  if ! command -v python3 &> /dev/null; then
+    echo -e "${RED}Error: python3 is required${NC}"
+    exit 1
+  fi
+}
+
+# Main
+check_deps
+
+case "${1:-help}" in
+  zones)
+    python3 "$MANAGER" zones
+    ;;
+  list)
+    if [[ -n "${2:-}" ]]; then
+      python3 "$MANAGER" list --domain "$2"
+    else
+      python3 "$MANAGER" list
+    fi
+    ;;
+  add)
+    interactive_add
+    ;;
+  create)
+    shift
+    python3 "$MANAGER" create "$@"
+    ;;
+  update)
+    shift
+    python3 "$MANAGER" update "$@"
+    ;;
+  delete)
+    shift
+    python3 "$MANAGER" delete "$@"
+    ;;
+  deploy)
+    shift
+    python3 "$DEPLOYER" deploy "$@"
+    ;;
+  status)
+    shift
+    python3 "$DEPLOYER" status "$@"
+    ;;
+  projects|list-projects)
+    python3 "$DEPLOYER" list
+    ;;
+  remove)
+    shift
+    python3 "$DEPLOYER" remove "$@"
+    ;;
+  monitor)
+    shift
+    python3 "$DEPLOYER" monitor "$@"
+    ;;
+  help|--help|-h)
+    show_help
+    ;;
+  *)
+    echo -e "${RED}Unknown command: $1${NC}"
+    echo "Run 'manus-dns help' for usage"
+    exit 1
+    ;;
+esac
