@@ -168,7 +168,8 @@ def main():
   sizes = [16, 32, 64, 128, 256, 512, 1024]
 
   # Create iconset directory
-  iconset_path = Path("/Users/dubs415/CLAUDE/manus-toolkit/Manus DNS.iconset")
+  repo_root = Path(__file__).resolve().parent.parent
+  iconset_path = repo_root / "Manus DNS.iconset"
   iconset_path.mkdir(exist_ok=True)
 
   print("Generating Manus DNS icon...")
@@ -189,7 +190,7 @@ def main():
   print("Converting to .icns...")
 
   # Convert to icns
-  icns_path = "/Users/dubs415/CLAUDE/manus-toolkit/Manus DNS.icns"
+  icns_path = str(repo_root / "Manus DNS.icns")
   os.system(f'iconutil -c icns "{iconset_path}" -o "{icns_path}"')
 
   if os.path.exists(icns_path):

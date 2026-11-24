@@ -5,7 +5,7 @@
 
 set -e
 
-GITEA_URL="http://192.168.188.93:3000"
+GITEA_URL="${GITEA_URL:?Set GITEA_URL to your Gitea address, for example http://gitea.local:3000}"
 GITEA_API_URL="$GITEA_URL/api/v1"
 REPO_NAME="manus-toolkit"
 REPO_DESCRIPTION="Manus DNS Automation Toolkit - Deploy projects with custom domains via Cloudflare DNS"
